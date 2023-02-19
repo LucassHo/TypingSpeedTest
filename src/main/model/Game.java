@@ -14,17 +14,18 @@ public class Game {
             "look first also new because day more use no man find here thing give many well";
     private final List<String> words = List.of(allInString.split(" "));
     private String randomWords = "";
+    private String userInput = "";
 
 
 
-    public Game() {
-        generateRandomWords();
+    public Game(int minutes) {
+        generateRandomWords(minutes);
+
 
     }
 
-    private void generateRandomWords() {
-        int i;
-        for (i = 0, i < wordsLength, i++) {
+    private void generateRandomWords(int minutes) {
+        for (int i = 0; i < wordsLength * minutes; i++) {
             Random rand = new Random();
             this.randomWords = this.randomWords + words.get(rand.nextInt(words.size()));
         }
@@ -32,6 +33,48 @@ public class Game {
 
     public String getRandomWords() {
         return randomWords;
+    }
+
+    public void addToInput(char input) {
+        this.userInput = this.userInput + input;
+    }
+
+    public void removeInput() {
+        if (this.userInput.length() <= 1) {
+            this.userInput = "";
+        }
+        this.userInput = this.userInput.substring(0, userInput.length() - 1);
+    }
+
+    public String getUserInput() {
+        return userInput;
+    }
+
+    public int getCurrentPosition() {
+        return userInput.length();
+    }
+    public List<Boolean> getCorrectness() {
+        List<Boolean> correctness = new ArrayList<>();
+        for (int i = 0; i < userInput.length(); i++) {
+            if (userInput.charAt(i) == randomWords.charAt(i)) {
+                correctness.add(true);
+            } else {
+                correctness.add(false);
+            }
+        }
+        return correctness;
+    }
+
+    public List<Boolean> getCorrectness(int startingPoint) {
+        List<Boolean> correctness = new ArrayList<>();
+        for (int i = startingPoint; i < userInput.length(); i++) {
+            if (userInput.charAt(i) == randomWords.charAt(i)) {
+                correctness.add(true);
+            } else {
+                correctness.add(false);
+            }
+        }
+        return correctness;
     }
 }
 
