@@ -27,7 +27,7 @@ public class Game {
     private void generateRandomWords(int minutes) {
         for (int i = 0; i < wordsLength * minutes; i++) {
             Random rand = new Random();
-            this.randomWords = this.randomWords + words.get(rand.nextInt(words.size()));
+            this.randomWords = this.randomWords + " " + words.get(rand.nextInt(words.size()));
         }
     }
 

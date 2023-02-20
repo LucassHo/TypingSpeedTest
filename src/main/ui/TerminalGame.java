@@ -1,10 +1,7 @@
 package ui;
 
 import com.googlecode.lanterna.*;
-import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.gui2.*;
-import com.googlecode.lanterna.gui2.dialogs.MessageDialogBuilder;
-import com.googlecode.lanterna.gui2.dialogs.MessageDialogButton;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
@@ -12,7 +9,6 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import model.Game;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TerminalGame {
@@ -29,10 +25,20 @@ public class TerminalGame {
     private final TextColor black = TextColor.ANSI.BLACK;
     private final TextColor red = TextColor.ANSI.RED;
     private final TextColor green = TextColor.ANSI.GREEN;
+    private final TextColor white = TextColor.ANSI.WHITE;
     private final TerminalSize textSize = new TerminalSize(1, 1);
+    private int time = 0;
+    private BasicWindow window;
+    private MultiWindowTextGUI gui;
+
+    public int start() throws Exception {
+        getUserInput();
+
+        return time;
+    }
 
 
-    public void start() throws Exception {
+    public void getUserInput() throws Exception {
         screen = new DefaultTerminalFactory().createScreen();
         screen.startScreen();
         width = screen.getTerminalSize().getColumns() - 4;
@@ -47,73 +53,63 @@ public class TerminalGame {
         panel.setLayoutManager(new AbsoluteLayout());
         panel.setPreferredSize(new TerminalSize(width, height));
 
-        Button button1 = new Button("1min", new Runnable() {
+        Label howLong = new Label("How long is your test? (in mins)");
+        howLong.setSize(new TerminalSize(howLong.getText().length(), 1));
+        howLong.setForegroundColor(black);
+        howLong.setPosition(new TerminalPosition(centerX - howLong.getText().length(), centerY));
+        panel.addComponent(howLong);
+
+        TextBox userTime = new TextBox();
+        userTime.setSize(new TerminalSize(5, 1));
+        userTime.setPosition(new TerminalPosition(centerX + 1, centerY));
+        panel.addComponent(userTime);
+
+        Button enter = new Button("Enter", new Runnable() {
             @Override
             public void run() {
-                game = new Game(1);
-                createInstance(1);
+                time = Integer.parseInt(userTime.getText());
             }
         });
-        button1.setPosition(new TerminalPosition(width / 4, centerY));
-        button1.setSize(new TerminalSize(buttonWidth, buttonHeight));
-        panel.addComponent(button1);
-
-
-        Button button2 = new Button("3min", new Runnable() {
-            @Override
-            public void run() {
-                game = new Game(3);
-                createInstance(3);
-            }
-        });
-        button2.setPosition(new TerminalPosition(width / 4 * 2, centerY));
-        button2.setSize(new TerminalSize(buttonWidth, buttonHeight));
-        panel.addComponent(button2);
-
-        Button button3 = new Button("5min", new Runnable() {
-            @Override
-            public void run() {
-                game = new Game(5);
-                createInstance(5);
-            }
-        });
-        button3.setPosition(new TerminalPosition(width / 4 * 3, centerY));
-        button3.setSize(new TerminalSize(buttonWidth, buttonHeight));
-        panel.addComponent(button3);
+        enter.setSize(new TerminalSize(5, 1));
+        enter.setPosition(new TerminalPosition(centerX - 3, centerY / 2));
+        panel.addComponent(enter);
 
 
 
-        BasicWindow window = new BasicWindow();
+
+        window = new BasicWindow();
         window.setComponent(panel);
 
-        MultiWindowTextGUI gui = new MultiWindowTextGUI(screen, new DefaultWindowManager(), new EmptySpace(TextColor.ANSI.WHITE));
+
+        gui = new MultiWindowTextGUI(screen, new DefaultWindowManager(), new EmptySpace(TextColor.ANSI.WHITE));
         gui.addWindowAndWait(window);
-
-
     }
 
-    private void createInstance(int minutes) {
-        panel.removeAllComponents();
+    public void createInstance(int minutes) throws InterruptedException, IOException {
+        screen = new DefaultTerminalFactory().createScreen();
+        screen.startScreen();
+        width = screen.getTerminalSize().getColumns();
+        height = screen.getTerminalSize().getRows();
+        centerX = width / 2;
+        centerY = height / 2;
+        System.out.println(width);
+        System.out.println(height);
+
+
+        game = new Game(minutes);
+        System.out.println(game.getRandomWords().length());
         long startTime = System.currentTimeMillis();
         long elapsedTime = System.currentTimeMillis() / 1000;
         while (elapsedTime - startTime < minutes * 60) {
-            try {
-                tick();
-            } catch (Exception e) {
-                System.out.println("Yeah ticking is rigged");
-            }
-
-            try {
-                Thread.sleep(1000L / Game.TICKS_PER_SECOND);
-            } catch (Exception e) {
-                System.out.println("Yeah sleeping rigged");
-            }
+            tick();
+            Thread.sleep(1000L / Game.TICKS_PER_SECOND);
 
             elapsedTime = System.currentTimeMillis() / 1000;
         }
 
         endScreen();
     }
+
 
     private void tick() throws IOException {
         handleUserInput();
@@ -127,22 +123,32 @@ public class TerminalGame {
 
     }
 
+
     private void handleUserInput() throws IOException {
         KeyStroke stroke = screen.pollInput();
 
+        if (stroke == null) {
+            return;
+        }
+
         if (stroke.getCharacter() != null) {
             game.addToInput(stroke.getCharacter());
-            System.out.println(stroke.getCharacter());
+        }
+
+        if (stroke.getKeyType() == null) {
+            return;
         }
 
         if (stroke.getKeyType() == KeyType.Backspace) {
+            System.out.println("YOU REACHED IT");
             game.removeInput();
-        }else {
+        } else {
             return;
         }
     }
 
-    private void updateScreen() {
+    private void updateScreen() throws IOException {
+        screen.clear();
         int currentPosition = game.getCurrentPosition();
         int posX = 0;
         String generatedWords = game.getRandomWords();
@@ -153,26 +159,41 @@ public class TerminalGame {
         if (currentPosition > centerX) {
             for (int i = 0; i < centerX; i++) {
                 char c = generatedWords.charAt(i - centerX + currentPosition);
-                Label label = new Label("" + c);
-                label.setPosition(new TerminalPosition(i, centerY));
-                label.setSize(textSize);
                 boolean correct = correctness.get(i - centerX + currentPosition);
                 if (correct) {
-                    label.setForegroundColor(green);
+                    screen.setCharacter(
+                            new TerminalPosition(i, centerY), new TextCharacter(c).withForegroundColor(green));
                 } else {
-                    label.setForegroundColor(red);
+                    screen.setCharacter(
+                            new TerminalPosition(i, centerY), new TextCharacter(c).withForegroundColor(red));
                 }
-                panel.addComponent(label);
             }
             for (int i = 0; i <= centerX; i++) {
                 char c = generatedWords.charAt(i + currentPosition);
-                Label label = new Label("" + c);
-                label.setPosition(new TerminalPosition(i, centerY));
-                label.setSize(textSize);
-                label.setForegroundColor(black);
-                panel.addComponent(label);
+                screen.setCharacter(new TerminalPosition(i + centerX, centerY),
+                        new TextCharacter(c).withForegroundColor(white));
+            }
+        } else {
+            for (int i = 0; i < currentPosition; i++) {
+                char c = generatedWords.charAt(i);
+                boolean correct = correctness.get(i);
+                if (correct) {
+                    screen.setCharacter(new TerminalPosition(i + centerX - currentPosition, centerY),
+                            new TextCharacter(c).withForegroundColor(green));
+                } else {
+                    screen.setCharacter(new TerminalPosition(i + centerX - currentPosition, centerY),
+                            new TextCharacter(c).withForegroundColor(green));
+                }
+            }
+            for (int i = 0; i <= centerX; i++) {
+                char c = generatedWords.charAt(i + currentPosition);
+                screen.setCharacter(new TerminalPosition(i, centerY),
+                        new TextCharacter(c).withForegroundColor(white));
             }
         }
+        screen.refresh();
+
+
 
 
     }

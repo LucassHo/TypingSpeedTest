@@ -5,6 +5,8 @@ public class Main {
         System.out.println("WIP");
         TerminalGame gameHandler = new TerminalGame();
 
-        gameHandler.start();
+        int time = gameHandler.start();
+        System.out.println(time);
+        gameHandler.createInstance(time);
     }
 }
