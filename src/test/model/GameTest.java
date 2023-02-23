@@ -26,16 +26,36 @@ public class GameTest {
         String s = "Test";
         char a = s.charAt(0);
         char b = s.charAt(1);
-        assertEquals(0, game.getUserInput().length());
+        assertEquals(0, game.getCurrentPosition());
         game.addToInput(a);
-        assertEquals(1, game.getUserInput().length());
+        assertEquals(1, game.getCurrentPosition());
         assertEquals("T", game.getUserInput());
         game.addToInput(b);
-        assertEquals(2, game.getUserInput().length());
+        assertEquals(2, game.getCurrentPosition());
         assertEquals("Te", game.getUserInput());
         game.removeInput();
-        assertEquals(1, game.getUserInput().length());
+        assertEquals(1, game.getCurrentPosition());
         assertEquals("T", game.getUserInput());
+        game.addToInput(a);
+        System.out.println(game.getUserInput());
+        game.addToInput(a);
+        System.out.println(game.getUserInput());
+        game.addToInput(a);
+        System.out.println(game.getUserInput());
+        game.addToInput(a);
+        System.out.println(game.getUserInput());
+        game.addToInput(a);
+        System.out.println(game.getUserInput());
+        game.removeInput();
+        System.out.println(game.getUserInput());
+        game.removeInput();
+        System.out.println(game.getUserInput());
+        game.removeInput();
+        System.out.println(game.getUserInput());
+        game.removeInput();
+        System.out.println(game.getUserInput());
+        game.removeInput();
+        System.out.println(game.getUserInput());
     }
 
     @Test

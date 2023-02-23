@@ -42,8 +42,9 @@ public class Game {
     public void removeInput() {
         if (this.userInput.length() <= 1) {
             this.userInput = "";
+        } else {
+            this.userInput = this.userInput.substring(0, userInput.length() - 1);
         }
-        this.userInput = this.userInput.substring(0, userInput.length() - 1);
     }
 
     public String getUserInput() {

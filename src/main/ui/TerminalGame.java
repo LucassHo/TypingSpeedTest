@@ -11,22 +11,20 @@ import model.Game;
 import java.io.IOException;
 import java.util.List;
 
+import static com.googlecode.lanterna.Symbols.BLOCK_DENSE;
+
 public class TerminalGame {
     private Game game;
     private Screen screen;
-    private WindowBasedTextGUI endgui;
     private Panel panel;
     private int width;
     private int height;
     private int centerX;
     private int centerY;
-    private final int buttonWidth = 10;
-    private final int buttonHeight = 2;
     private final TextColor black = TextColor.ANSI.BLACK;
     private final TextColor red = TextColor.ANSI.RED;
     private final TextColor green = TextColor.ANSI.GREEN;
     private final TextColor white = TextColor.ANSI.WHITE;
-    private final TerminalSize textSize = new TerminalSize(1, 1);
     private int time = 0;
     private BasicWindow window;
     private MultiWindowTextGUI gui;
@@ -98,10 +96,11 @@ public class TerminalGame {
 
         game = new Game(minutes);
         System.out.println(game.getRandomWords().length());
-        long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis() / 1000;
         long elapsedTime = System.currentTimeMillis() / 1000;
         while (elapsedTime - startTime < minutes * 60) {
-            tick();
+            long timeLeft = minutes * 60 - (elapsedTime - startTime);
+            tick(timeLeft);
             Thread.sleep(1000L / Game.TICKS_PER_SECOND);
 
             elapsedTime = System.currentTimeMillis() / 1000;
@@ -111,15 +110,15 @@ public class TerminalGame {
     }
 
 
-    private void tick() throws IOException {
+    private void tick(long timeLeft) throws IOException {
         handleUserInput();
 
-        updateScreen();
+        updateScreen(timeLeft);
 
     }
 
-    private void endScreen() {
-        panel.removeAllComponents();
+    private void endScreen() throws IOException {
+        screen.close();
 
     }
 
@@ -131,31 +130,44 @@ public class TerminalGame {
             return;
         }
 
-        if (stroke.getCharacter() != null) {
-            game.addToInput(stroke.getCharacter());
-        }
-
         if (stroke.getKeyType() == null) {
             return;
         }
 
         if (stroke.getKeyType() == KeyType.Backspace) {
-            System.out.println("YOU REACHED IT");
             game.removeInput();
-        } else {
             return;
+        }
+
+        if (stroke.getCharacter() != null) {
+            game.addToInput(stroke.getCharacter());
         }
     }
 
-    private void updateScreen() throws IOException {
+    private void updateScreen(long timeLeft) throws IOException {
         screen.clear();
         int currentPosition = game.getCurrentPosition();
-        int posX = 0;
         String generatedWords = game.getRandomWords();
         List<Boolean> correctness;
 
         correctness = game.getCorrectness();
 
+        addTyped(currentPosition, correctness, generatedWords);
+        addUntyped(currentPosition, generatedWords);
+        addTimer(timeLeft);
+        //System.out.println(currentPosition);
+
+        TextCharacter indicator = new TextCharacter(BLOCK_DENSE);
+        screen.setCharacter(new TerminalPosition(centerX, centerY + 1), indicator);
+
+        screen.refresh();
+
+
+
+
+    }
+
+    private void addTyped(int currentPosition, List<Boolean> correctness, String generatedWords) {
         if (currentPosition > centerX) {
             for (int i = 0; i < centerX; i++) {
                 char c = generatedWords.charAt(i - centerX + currentPosition);
@@ -168,12 +180,12 @@ public class TerminalGame {
                             new TerminalPosition(i, centerY), new TextCharacter(c).withForegroundColor(red));
                 }
             }
-            for (int i = 0; i <= centerX; i++) {
-                char c = generatedWords.charAt(i + currentPosition);
-                screen.setCharacter(new TerminalPosition(i + centerX, centerY),
-                        new TextCharacter(c).withForegroundColor(white));
-            }
         } else {
+            for (int i = 0; i <= centerX - currentPosition; i++) {
+                String space = " ";
+                char spacing = space.charAt(0);
+                screen.setCharacter(i, centerY, new TextCharacter(spacing).withForegroundColor(black));
+            }
             for (int i = 0; i < currentPosition; i++) {
                 char c = generatedWords.charAt(i);
                 boolean correct = correctness.get(i);
@@ -182,19 +194,29 @@ public class TerminalGame {
                             new TextCharacter(c).withForegroundColor(green));
                 } else {
                     screen.setCharacter(new TerminalPosition(i + centerX - currentPosition, centerY),
-                            new TextCharacter(c).withForegroundColor(green));
+                            new TextCharacter(c).withForegroundColor(red));
                 }
             }
-            for (int i = 0; i <= centerX; i++) {
-                char c = generatedWords.charAt(i + currentPosition);
-                screen.setCharacter(new TerminalPosition(i, centerY),
-                        new TextCharacter(c).withForegroundColor(white));
-            }
         }
-        screen.refresh();
+    }
 
+    private void addUntyped(int currentPosition, String generatedWords) {
+        for (int i = 0; i <= centerX; i++) {
+            char c = generatedWords.charAt(i + currentPosition);
+            screen.setCharacter(new TerminalPosition(i + centerX, centerY),
+                    new TextCharacter(c).withForegroundColor(white));
+        }
+    }
 
+    private void addTimer(long timeLeft) {
+        String timer = timeLeft + "";
+        int posY = centerY / 2;
+        for (int i = 0; i < timer.length(); i++) {
+            char c = timer.charAt(i);
+            int posX = i - timer.length() / 2 + centerX;
+            screen.setCharacter(new TerminalPosition(posX, posY),
+                    new TextCharacter(c).withForegroundColor(white));
 
-
+        }
     }
 }
