@@ -14,12 +14,14 @@ public class GameTest {
     @BeforeEach
     void init() {
         game = new Game(1);
-        System.out.println(game.getRandomWords());
     }
 
     @Test
     void initTest() {
         assertTrue(game.getRandomWords().length() > 0);
+        assertEquals(1, game.getTime());
+        Game game2 = new Game(5);
+        assertEquals(5, game2.getTime());
     }
 
     @Test
@@ -37,6 +39,15 @@ public class GameTest {
         game.removeInput();
         assertEquals(1, game.getCurrentPosition());
         assertEquals("T", game.getUserInput());
+        game.removeInput();
+        assertEquals(0, game.getCurrentPosition());
+        assertEquals("", game.getUserInput());
+        game.removeInput();
+        assertEquals(0, game.getCurrentPosition());
+        assertEquals("", game.getUserInput());
+        game.addToInput(b);
+        assertEquals(1, game.getCurrentPosition());
+        assertEquals("e", game.getUserInput());
     }
 
     @Test
