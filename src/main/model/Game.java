@@ -1,6 +1,7 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -13,7 +14,7 @@ public class Game {
             + " about know will as up one time there year so think when which them some me people take out into just "
             + "time there year see him your come could now than like other how then its our two more these want way "
             + "look first also new because day more use no man find here thing give many well";
-    private final List<String> words = List.of(allInString.split(" "));
+    private final List<String> words = Arrays.asList(allInString.split(" "));
     private String randomWords = "";
     private String userInput = "";
     private int time;
