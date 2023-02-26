@@ -3,6 +3,7 @@ package model;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -83,7 +84,7 @@ public class GameTest {
     @Test
     void calcWordsTypedTest() {
         String correctOne = game.getRandomWords();
-        List<String> words = List.of(correctOne.split(" "));
+        List<String> words = Arrays.asList(correctOne.split(" "));
         String one = words.get(0);
         String two = words.get(1);
         String three = words.get(2);
