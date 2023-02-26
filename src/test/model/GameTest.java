@@ -36,26 +36,6 @@ public class GameTest {
         game.removeInput();
         assertEquals(1, game.getCurrentPosition());
         assertEquals("T", game.getUserInput());
-        game.addToInput(a);
-        System.out.println(game.getUserInput());
-        game.addToInput(a);
-        System.out.println(game.getUserInput());
-        game.addToInput(a);
-        System.out.println(game.getUserInput());
-        game.addToInput(a);
-        System.out.println(game.getUserInput());
-        game.addToInput(a);
-        System.out.println(game.getUserInput());
-        game.removeInput();
-        System.out.println(game.getUserInput());
-        game.removeInput();
-        System.out.println(game.getUserInput());
-        game.removeInput();
-        System.out.println(game.getUserInput());
-        game.removeInput();
-        System.out.println(game.getUserInput());
-        game.removeInput();
-        System.out.println(game.getUserInput());
     }
 
     @Test
@@ -79,7 +59,62 @@ public class GameTest {
         assertTrue(newCorrectness.get(1));
         assertTrue(newCorrectness.get(2));
         assertTrue(newCorrectness.get(3));
+    }
+
+    @Test
+    void calcCharsTypedTest() {
+        String correctOne = game.getRandomWords();
+        char a = correctOne.charAt(0);
+        char b = correctOne.charAt(1);
+        char c = correctOne.charAt(2);
+        char d = correctOne.charAt(3);
+        game.addToInput(a);
+        game.addToInput(a);
+        assertEquals(1, game.calcCharsTyped());
+        game.removeInput();
+        game.addToInput(b);
+        game.addToInput(c);
+        game.addToInput(d);
+        assertEquals(4, game.calcCharsTyped());
 
 
+    }
+
+    @Test
+    void calcWordsTypedTest() {
+        String correctOne = game.getRandomWords();
+        List<String> words = List.of(correctOne.split(" "));
+        String one = words.get(0);
+        String two = words.get(1);
+        String three = words.get(2);
+        String wrong = "notAWordSinceThisIsTooLong";
+        String spaceString = " ";
+        char space = spaceString.charAt(0);
+
+        addWord(one);
+        assertEquals(0, game.calcWordsTyped());
+        game.addToInput(space);
+        assertEquals(1, game.calcWordsTyped());
+        addWord(two);
+        assertEquals(1, game.calcWordsTyped());
+        game.addToInput(space);
+        assertEquals(2, game.calcWordsTyped());
+        addWord(wrong);
+        game.addToInput(space);
+        assertEquals(2, game.calcWordsTyped());
+        addWord(three);
+        game.addToInput(space);
+        assertEquals(2, game.calcWordsTyped());
+
+
+
+
+
+    }
+
+    private void addWord(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            game.addToInput(str.charAt(i));
+        }
     }
 }
