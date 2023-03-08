@@ -1,10 +1,14 @@
 package model;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 
 //History is class with a list containing all the previous game stats
 public class History {
-    ArrayList<Stats> history;
+    private String player;
+    private ArrayList<Stats> history;
 
     //constructor for History
     public History() {
@@ -28,5 +32,20 @@ public class History {
 
     public int size() {
         return history.size();
+    }
+
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        json.put("History", historyToJson());
+        return json;
+    }
+
+    private JSONArray historyToJson() {
+        JSONArray jsonArray = new JSONArray();
+
+        for (Stats stat : history) {
+            jsonArray.put(stat.toJson());
+        }
+        return jsonArray;
     }
 }

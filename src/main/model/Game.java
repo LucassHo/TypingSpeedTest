@@ -17,16 +17,16 @@ public class Game {
     private final List<String> words = Arrays.asList(allInString.split(" "));
     private String randomWords = "";
     private String userInput = "";
-    private int time;
+    private double time;
     private List<String> gtList;
 
 
     //REQUIRES: minutes > 0
     //MODIFIES: this
     //EFFECTS: constructor for game, saves the length of game and randomizes words for game
-    public Game(int minutes) {
+    public Game(double minutes) {
         this.time = minutes;
-        generateRandomWords(minutes);
+        generateRandomWords((int)minutes + 1);
         this.gtList = stringToArray(getRandomWords());
 
     }
@@ -58,7 +58,7 @@ public class Game {
     }
 
 
-    public int getTime() {
+    public double getTime() {
         return time;
     }
 
@@ -114,7 +114,6 @@ public class Game {
     public int calcCharsTyped() {
         int charsTyped = 0;
         List<String> utList = stringToArray(getUserInput());
-        System.out.println(utList);
 
         for (int i = 0; i < userInput.length(); i++) {
             if (utList.get(i).equals(gtList.get(i))) {
@@ -122,6 +121,17 @@ public class Game {
             }
         }
         return charsTyped;
+    }
+
+    public int calcAccuracy() {
+        List<Boolean> correctness = getCorrectness();
+        int correct = 0;
+        for (int i = 0; i < correctness.size(); i++) {
+            if (correctness.get(i)) {
+                correct++;
+            }
+        }
+        return (int) ((double) correct * 100 / correctness.size());
     }
 
     //EFFECTS: turns the given string into an array of individual characters as string

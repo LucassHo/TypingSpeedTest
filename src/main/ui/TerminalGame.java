@@ -10,7 +10,10 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import model.Game;
 import model.History;
 import model.Stats;
+import persistence.JsonReader;
+import persistence.JsonWriter;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -28,13 +31,17 @@ public class TerminalGame {
     private final TextColor red = TextColor.ANSI.RED;
     private final TextColor green = TextColor.ANSI.GREEN;
     private final TextColor white = TextColor.ANSI.WHITE;
-    private int time = 0;
+    private double time = 0;
     private WindowBasedTextGUI startGui;
     private Panel panel;
     private BasicWindow window;
-    private History history = new History();
+    private History history;
     private Boolean continueGame;
     private TerminalSize charSize = new TerminalSize(1, 1);
+    private static final String HISTORY_STORE = "./data/history.json";
+    private JsonWriter jsonWriter;
+    private JsonReader jsonReader;
+
 
     //EFFECTS: gets user choice of game time or check history
     public void start() throws Exception {
@@ -43,9 +50,13 @@ public class TerminalGame {
         height = screen.getTerminalSize().getRows() - 4;
         centerX = width / 2;
         centerY = height / 2;
+        jsonWriter = new JsonWriter(HISTORY_STORE);
+        jsonReader = new JsonReader(HISTORY_STORE);
+        history = jsonReader.read();
         getUserInput();
         createInstance(time);
     }
+
 
     //MODIFIES: this
     //EFFECTS: starts the screen, separated for recursion
@@ -53,6 +64,7 @@ public class TerminalGame {
         screen = new DefaultTerminalFactory().createScreen();
         screen.startScreen();
     }
+
 
     //EFFECTS: start screen, takes user's input
     private void getUserInput() {
@@ -78,9 +90,10 @@ public class TerminalGame {
         startGui.addWindowAndWait(window);
     }
 
+
     //EFFECTS: adds button to start screen for operation
     private void addButtonForInput() {
-        TextBox input = new TextBox().setValidationPattern(Pattern.compile("[0-9]+"));
+        TextBox input = new TextBox();
         panel.addComponent(input);
 
         Button enterButton = new Button("Enter", new Runnable() {
@@ -89,7 +102,7 @@ public class TerminalGame {
                 if (input.getText().equals("")) {
                     return;
                 } else {
-                    time = Integer.parseInt(input.getText());
+                    time = Double.parseDouble(input.getText());
                     startGui.removeWindow(window);
                 }
             }
@@ -106,6 +119,7 @@ public class TerminalGame {
         panel.addComponent(historyButton);
     }
 
+
     //MODIFIES: History
     //EFFECTS: opens history menu
     private void historyScreen() {
@@ -113,12 +127,15 @@ public class TerminalGame {
         Button exit = new Button("Exit", new Runnable() {
             @Override
             public void run() {
+                startGui.removeWindow(window);
                 getUserInput();
             }
         });
         panel.addComponent(exit);
     }
 
+
+    //EFFECTS: adds the table of history
     private void addHistoryTable() {
         Table<String> table = new Table<>("Date", "WPM", "CPM");
         for (int i = 0; i < history.size(); i++) {
@@ -139,14 +156,15 @@ public class TerminalGame {
         panel.addComponent(table);
     }
 
+
     //EFFECTS: starts the game with given time
-    private void createInstance(int minutes) throws InterruptedException, IOException {
+    private void createInstance(double minutes) throws InterruptedException, IOException {
 
         game = new Game(minutes);
         long startTime = System.currentTimeMillis() / 1000;
         long elapsedTime = System.currentTimeMillis() / 1000;
         while (elapsedTime - startTime < minutes * 60) {
-            long timeLeft = minutes * 60 - (elapsedTime - startTime);
+            long timeLeft = (long)(minutes * 60 - (elapsedTime - startTime));
             tick(timeLeft);
             Thread.sleep(1000L / Game.TICKS_PER_SECOND);
 
@@ -165,6 +183,7 @@ public class TerminalGame {
 
     }
 
+
     //EFFECTS: generates end screen with WPM and CPM
     private void endScreen() {
         panel = new Panel();
@@ -172,12 +191,12 @@ public class TerminalGame {
         panel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
         panel.setPreferredSize(new TerminalSize(width - 4, height - 4));
 
-        int wpm = game.calcWordsTyped() / game.getTime();
-        int cpm = game.calcCharsTyped() / game.getTime();
+        int wpm = (int) ((double) game.calcWordsTyped() / game.getTime());
+        int cpm = (int) ((double) game.calcCharsTyped() / game.getTime());
         Stats result = new Stats(wpm, cpm);
         history.addStats(result);
 
-        drawEndScreen(wpm, cpm);
+        drawEndScreen(game.calcWordsTyped(), game.calcCharsTyped(), wpm, cpm);
 
         window = new BasicWindow();
         window.setComponent(panel);
@@ -185,14 +204,35 @@ public class TerminalGame {
         startGui.addWindowAndWait(window);
     }
 
-    private void drawEndScreen(int wpm, int cpm) {
+
+    //EFFECTS: draws end screen
+    private void drawEndScreen(int w, int c,int wpm, int cpm) {
 
         Label gameOver = new Label("Game Over!");
+        Label printW = new Label("You typed " + w + " words!");
+        Label printC = new Label("You typed " + c + " characters!");
         Label printWPM = new Label("Your final WPM is " + wpm + "!");
         Label printCPM = new Label("Your final CPM is " + cpm + "!");
+        Label printCorrectness = new Label("Your accuracy is " + game.calcAccuracy() + "%!");
         panel.addComponent(gameOver);
+        panel.addComponent(printW);
+        panel.addComponent(printC);
         panel.addComponent(printWPM);
         panel.addComponent(printCPM);
+        panel.addComponent(printCorrectness);
+        drawEndScreenButton();
+
+    }
+
+
+    //EFFECTS: draws end screen buttons
+    private void drawEndScreenButton() {
+        Button spacer = new Button("", new Runnable() {
+            @Override
+            public void run() {
+                return;
+            }
+        });
 
         Button cont = new Button("Continue", new Runnable() {
             @Override
@@ -210,9 +250,11 @@ public class TerminalGame {
             }
         });
 
+        panel.addComponent(spacer);
         panel.addComponent(cont);
         panel.addComponent(exit);
     }
+
 
     //MODIFIES: game
     //EFFECTS: takes user input and makes corresponding changes
@@ -237,6 +279,7 @@ public class TerminalGame {
         }
     }
 
+
     //EFFECTS: updates the current screen during game
     private void updateScreen(long timeLeft) throws IOException {
         screen.clear();
@@ -259,6 +302,7 @@ public class TerminalGame {
 
     }
 
+
     //EFFECTS: adds typed characters to screen, green if correct and red if incorrect
     private void addTyped(int currentPosition, List<Boolean> correctness, String generatedWords) {
         if (currentPosition > centerX) {
@@ -277,6 +321,7 @@ public class TerminalGame {
             addTypedWithSpace(currentPosition, correctness, generatedWords);
         }
     }
+
 
     //EFFECTS: adds typed characters to screen when space is required for positioning
     private void addTypedWithSpace(int currentPosition, List<Boolean> correctness, String generatedWords) {
@@ -299,6 +344,7 @@ public class TerminalGame {
         }
     }
 
+
     //EFFECTS: adds untyped characters to screen with color white
     private void addUntyped(int currentPosition, String generatedWords) {
         for (int i = 0; i <= centerX; i++) {
@@ -307,6 +353,7 @@ public class TerminalGame {
                     new TextCharacter(c).withForegroundColor(white));
         }
     }
+
 
     //EFFECTS: puts time left on screen
     private void addTimer(long timeLeft) {
@@ -320,6 +367,18 @@ public class TerminalGame {
 
         }
     }
+
+    public void saveHistory() {
+        try {
+            jsonWriter.open();
+            jsonWriter.write(history);
+            jsonWriter.close();
+            System.out.println("History Saved!");
+        } catch (FileNotFoundException e) {
+            System.out.println("FileNotFound, " + HISTORY_STORE);
+        }
+    }
+
 
     public Boolean getContinueGame() {
         return continueGame;

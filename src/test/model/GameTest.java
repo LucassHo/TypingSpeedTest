@@ -118,10 +118,20 @@ public class GameTest {
         game.addToInput(space);
         assertEquals(2, game.calcWordsTyped());
 
+    }
+    @Test
+    void calcAccuracyTest() {
+        String correctOne = game.getRandomWords();
 
-
-
-
+        assertEquals(0, game.calcAccuracy());
+        game.addToInput(correctOne.charAt(0));
+        assertEquals(100, game.calcAccuracy());
+        game.addToInput(correctOne.charAt(0));
+        assertEquals(50, game.calcAccuracy());
+        game.removeInput();
+        game.removeInput();
+        game.addToInput(correctOne.charAt(1));
+        assertEquals(0, game.calcAccuracy());
     }
 
     private void addWord(String str) {
