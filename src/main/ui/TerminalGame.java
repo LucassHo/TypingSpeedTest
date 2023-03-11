@@ -480,7 +480,6 @@ public class TerminalGame {
     //EFFECTS: adds a speed ratio bar at given Y-coordinates
     private void addPMBar(long timeLeft, String pm, int numTyped, int divider, int posY) {
         int speedBits = (int) (numTyped / (game.getTime() * 60 - timeLeft) * 60 / divider * width);
-        System.out.println(speedBits);
         for (int i = 0; i < speedBits; i++) {
             screen.setCharacter(new TerminalPosition(i, posY),
                     new TextCharacter(Symbols.BLOCK_DENSE).withForegroundColor(red));
