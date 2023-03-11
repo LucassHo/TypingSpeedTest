@@ -22,3 +22,8 @@ different colours
 and CPM (characters per minute)
 - As a user, I want to be able to add and view my previous speeds
 and date the test was ran in a list to see my improvement
+- As a user, I want to be able to save my stats
+- As a user, I want to be able to load my stats from file
+- As a user, on startup, I want to be able to decide to load saved stats from file or not
+- As a user, after the game ends, I want to be able to decide to save stats to file or not
+- As a user, I want to be able to choose the difficulty of the test
