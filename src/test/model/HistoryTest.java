@@ -14,9 +14,9 @@ public class HistoryTest {
     @BeforeEach
     void init() {
         this.history = new History();
-        stat1 = new Stats(1, 1);
-        stat2 = new Stats(2, 2);
-        stat3 = new Stats(3, 3);
+        stat1 = new Stats(1, 1, 100, 1, "Easy");
+        stat2 = new Stats(2, 2, 50, 0.1, "Hard");
+        stat3 = new Stats(3, 3, 1, 1.5, "Easy");
 
     }
 

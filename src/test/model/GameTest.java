@@ -13,14 +13,14 @@ public class GameTest {
 
     @BeforeEach
     void init() {
-        game = new Game(1);
+        game = new Game(1, "Easy");
     }
 
     @Test
     void initTest() {
         assertTrue(game.getRandomWords().length() > 0);
         assertEquals(1, game.getTime());
-        Game game2 = new Game(5);
+        Game game2 = new Game(5, "Hard");
         assertEquals(5, game2.getTime());
     }
 
