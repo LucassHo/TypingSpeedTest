@@ -3,10 +3,12 @@ package ui;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        TerminalGame gameHandler = new TerminalGame();
+        //TerminalGame gameHandler = new TerminalGame();
 
-        gameHandler.startScreen();
-        run(gameHandler);
+        //gameHandler.startScreen();
+        //run(gameHandler);
+        TerminalSwing gameHandler = new TerminalSwing();
+        gameHandler.init();
 
     }
 

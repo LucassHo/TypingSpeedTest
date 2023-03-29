@@ -61,6 +61,7 @@ public class TerminalGame {
         } else {
             history = new History();
             saveHistory();
+            loadSave = true;
         }
         getUserInput();
         getDifficulty();
