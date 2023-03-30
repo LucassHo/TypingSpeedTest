@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 //History is class with a list containing all the previous game stats
 public class History {
-    private String player;
     private ArrayList<Stats> history;
 
     //constructor for History
@@ -34,12 +33,16 @@ public class History {
         return history.size();
     }
 
+
+    //EFFECTS: constructs JSONObject of this and returns it
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         json.put("History", historyToJson());
         return json;
     }
 
+
+    //EFFECTS: turns individual elements of history into JSONObject, added to JSONArray and returned
     private JSONArray historyToJson() {
         JSONArray jsonArray = new JSONArray();
 

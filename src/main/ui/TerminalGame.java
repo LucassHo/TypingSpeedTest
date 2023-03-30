@@ -19,6 +19,8 @@ import java.util.List;
 
 import static com.googlecode.lanterna.Symbols.BLOCK_DENSE;
 
+
+// UNUSED LANTERNA VERSION OF TYPING SPEED TEST KEPT AS REFERENCE, PLEASE IGNORE
 public class TerminalGame {
     private Game game;
     private Screen screen;

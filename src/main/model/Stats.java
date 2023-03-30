@@ -61,6 +61,7 @@ public class Stats {
     }
 
 
+    //EFFECTS: creates JSONObject of this and returns it
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         json.put("Date", dateOfGame);

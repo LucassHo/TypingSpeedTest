@@ -27,3 +27,15 @@ and date the test was ran in a list to see my improvement
 - As a user, on startup, I want to be able to decide to load saved stats from file or not
 - As a user, after the game ends, I want to be able to decide to save stats to file or not
 - As a user, I want to be able to choose the difficulty of the test
+- (P3) As a user, I want to be able to add multiple stats to a history by playing the game
+- (P3) As a user, I wanted to be prompted with the option to load stats from file when the application starts 
+and prompted with the option to save stats to file when the application ends
+
+***Instructions For Grader***:
+- You can generate the first required action related to adding stats to history by playing the typing game
+  (decimals like 0.1 is accepted when choosing playtime)
+- You can generate the second required action related to removing stats from history by clicking history in main start
+start screen, choosing a stat from table by clicking it and pressing delete
+- You can locate my visual components by the data/images directory
+- You can save the state by choosing yes at the save data screen after the results screen
+- You can reload the state by choosing yes at the first screen when running the program

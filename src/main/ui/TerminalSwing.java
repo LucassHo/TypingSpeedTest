@@ -1,9 +1,5 @@
 package ui;
 
-import com.googlecode.lanterna.TerminalPosition;
-import com.googlecode.lanterna.TextCharacter;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
 import model.Game;
 import model.History;
 import model.Stats;
@@ -11,18 +7,22 @@ import persistence.JsonReader;
 import persistence.JsonWriter;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.googlecode.lanterna.Symbols.BLOCK_DENSE;
 
+//TerminalSwing is the main GUI for the typing speed test, implements listeners for action detection
 public class TerminalSwing implements ActionListener, KeyListener {
     private int width;
     private int height;
@@ -36,7 +36,14 @@ public class TerminalSwing implements ActionListener, KeyListener {
     private String difficulty = "Easy";
     private Boolean continueGame;
     private static final String HISTORY_STORE = "./data/history.json";
-    private JPanel p;
+    private static final Image PLAY_BUTTON = new ImageIcon("./data/images/play_button.jpeg").getImage();
+    private static final Image HISTORY_BUTTON = new ImageIcon("./data/images/history_button.png").getImage();
+    private static final Image YES_BUTTON = new ImageIcon("./data/images/yes_button.png").getImage();
+    private static final Image NO_BUTTON = new ImageIcon("./data/images/no_button.png").getImage();
+    private static final Image EXIT_BUTTON = new ImageIcon("./data/images/exit_button.png").getImage();
+    private static final Image CONT_BUTTON = new ImageIcon("./data/images/continue_button.jpg").getImage();
+    private static final Image DEL_BUTTON = new ImageIcon("./data/images/delete_button.png").getImage();
+    private JPanel panel;
     private JFrame loadSaveFrame;
     private JFrame startFrame;
     private JFrame gameFrame;
@@ -47,105 +54,144 @@ public class TerminalSwing implements ActionListener, KeyListener {
     private Color green = Color.GREEN;
     private Color red = Color.RED;
     private Color black = Color.BLACK;
-    private final int CHAR_X = 10;
-    private final int CHAR_Y = 16;
-    private final int FRAME_LENGTH = 900;
-    private final int FRAME_HEIGHT = 900;
-    private final int CENTER_X = FRAME_LENGTH / 2;
-    private final int CENTER_Y = FRAME_HEIGHT / 2;
-    private final int CHAR_TO_HALF = CENTER_X / CHAR_X;
+    private int selectedRowHistory = -1;
+    private static final int CHAR_X = 10;
+    private static final int CHAR_Y = 16;
+    private static final int FRAME_LENGTH = 900;
+    private static final int FRAME_HEIGHT = 900;
+    private static final int CENTER_X = FRAME_LENGTH / 2;
+    private static final int CENTER_Y = FRAME_HEIGHT / 2;
+    private static final int CHAR_TO_HALF = CENTER_X / CHAR_X;
 
-    public TerminalSwing() {
-        loadSaveFrame = new JFrame("Typing Speed Test Beta");
-        startFrame = new JFrame("Typing Speed Test Beta");
-        gameFrame = new JFrame("Typing Speed Test Beta");
-        historyFrame = new JFrame("Typing Speed Test Beta");
-        endFrame = new JFrame("Typing Speed Test Beta");
-        endSaveFrame = new JFrame("Typing Speed Test Beta");
-        initiateFrames();
+
+    //Constructor for TerminalSwing
+    public TerminalSwing() throws InterruptedException {
         jsonWriter = new JsonWriter(HISTORY_STORE);
         jsonReader = new JsonReader(HISTORY_STORE);
-        currentState = 0;
-        width = loadSaveFrame.getWidth();
-        height = loadSaveFrame.getHeight();
-        loadSaveFrame.setVisible(true);
-
-    }
-
-    private void initiateFrames() {
-        ArrayList<JFrame> frames = new ArrayList<>();
-        frames.add(loadSaveFrame);
-        frames.add(startFrame);
-        frames.add(gameFrame);
-        frames.add(historyFrame);
-        frames.add(endFrame);
-        frames.add(endSaveFrame);
-        for (JFrame frame : frames) {
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(FRAME_LENGTH, FRAME_LENGTH);
-        }
-    }
-
-    public void init() throws InterruptedException, IOException {
+        width = FRAME_LENGTH;
+        height = FRAME_HEIGHT;
         loadSaveScreen();
         waitForState(1);
+
+    }
+
+
+    //EFFECTS: flow of events for typing speed test, proceeds after actions, designed for looping
+    public void init() throws InterruptedException, IOException {
+        currentState = 1;
         loadSaveFrame.setVisible(false);
-        startFrame.setVisible(true);
         loadMainScreen();
         waitForState(2);
         startFrame.setVisible(false);
-        gameFrame.setVisible(true);
         createInstance(time);
         waitForState(3);
         gameFrame.setVisible(false);
-        endFrame.setVisible(true);
-
-
-
+        loadEndScreen();
+        waitForState(4);
+        endFrame.setVisible(false);
+        loadEndSaveScreen();
+        waitForState(5);
+        endSaveFrame.setVisible(false);
     }
 
+
+    //EFFECTS: waits for currentState to switch to given state
     private void waitForState(int state) throws InterruptedException {
         while (currentState != state) {
             Thread.sleep(1000L / Game.TICKS_PER_SECOND);
         }
     }
 
+
+    //EFFECTS: resizes given image to given width and height
+    private Image getScaledImage(Image srcImg, int w, int h) {
+        BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = resizedImg.createGraphics();
+
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.drawImage(srcImg, 0, 0, w, h, null);
+        g2.dispose();
+
+        return resizedImg;
+    }
+
+
     //EFFECTS: loads the "Load Save Data?" screen
     private void loadSaveScreen() {
-        p = new JPanel();
-        p.setBounds(0,0, width, height);
-        p.setLayout(new BoxLayout(p, BoxLayout.PAGE_AXIS));
-        JLabel label1 = new JLabel("Load Saved Data?");
-        JButton yes = new JButton("Yes");
-        JButton no = new JButton("No");
-        yes.setMnemonic(KeyEvent.VK_Y);
-        yes.setActionCommand("Yes");
-        yes.addActionListener(this);
-        no.setMnemonic(KeyEvent.VK_N);
-        no.setActionCommand("No");
-        no.addActionListener(this);
-        p.add(label1);
-        p.add(yes);
-        p.add(no);
-        p.setEnabled(true);
-        loadSaveFrame.add(p);
+        loadSaveFrame = new JFrame("Typing Speed Test Beta");
+        loadSaveFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        loadSaveFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
+        loadSaveFrame.setVisible(true);
+        panel = new JPanel();
+        panel.setLayout(null);
+        loadSaveScreenComponents("Load Saved Data?");
         loadSaveFrame.setLayout(new GridLayout(1, 1));
+        loadSaveFrame.add(panel);
+        loadSaveFrame.revalidate();
+        loadSaveFrame.repaint();
 
     }
 
+
+    //EFFECTS: constructs the main start screen
     private void loadMainScreen() {
-        JButton b1 = new JButton("Enter");
-        b1.setMnemonic(KeyEvent.VK_E);
+        startFrame = new JFrame("Typing Speed Test Beta");
+        startFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        startFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
+        startFrame.setVisible(true);
+        JPanel p2 = buttonPanel();
+
+        createPanel();
+
+        panel.setEnabled(true);
+
+        JPanel p3 = new JPanel();
+        p3.setLayout(new GridLayout(6, 1));
+        p3.add(p2);
+        startFrame.add(panel);
+        startFrame.add(p3);
+        startFrame.setLayout(new GridLayout(2, 1));
+        startFrame.revalidate();
+        startFrame.repaint();
+    }
+
+
+    //EFFECTS: returns panel for buttons in main start screen
+    private JPanel buttonPanel() {
+        JButton b1 = new JButton(new ImageIcon(getScaledImage(PLAY_BUTTON, width / 12, height / 12)));
         b1.setActionCommand("Enter");
         b1.addActionListener(this);
-        JButton b2 = new JButton("History");
-        b2.setMnemonic(KeyEvent.VK_H);
+        JButton b2 = new JButton(new ImageIcon(getScaledImage(HISTORY_BUTTON, width / 7, height / 12)));
         b2.setActionCommand("History");
         b2.addActionListener(this);
-        JButton b3 = new JButton("Exit");
-        b3.setMnemonic(KeyEvent.VK_ESCAPE);
+        JButton b3 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, width / 6, height / 12)));
         b3.setActionCommand("Exit");
         b3.addActionListener(this);
+
+
+        JPanel p2 = new JPanel();
+        p2.setBounds(0, 150, width, 50);
+        p2.setLayout(new GridLayout(1, 3));
+
+        p2.add(b1);
+        p2.add(b2);
+        p2.add(b3);
+        p2.setEnabled(true);
+        return p2;
+    }
+
+
+    //EFFECTS: returns panel for labels and inputs in main start screen
+    private void createPanel() {
+        panel = new JPanel();
+        panel.setBounds(0, 0, width, height);
+        panel.setLayout(null);
+        labelPanel();
+    }
+
+
+    //EFFECTS: constructs the panel for labels and inputs in main start screen, split to adhere function length req.
+    private void labelPanel() {
         JLabel l1 = new JLabel("Welcome to Typing Speed Test!");
         JLabel l2 = new JLabel("Enter your play time (in min):");
         JLabel l3 = new JLabel("Choose Difficulty");
@@ -155,57 +201,219 @@ public class TerminalSwing implements ActionListener, KeyListener {
         difficultyList.setSelectedIndex(0);
         difficultyList.addActionListener(this);
 
-
-        p = new JPanel();
-        p.setBounds(0, 0, width, height);
-        p.setLayout(null);
-        Insets insets = p.getInsets();
         Dimension size = l1.getPreferredSize();
-        l1.setBounds(50 + insets.left, 50 + insets.top, size.width + 10, size.height);
+        l1.setBounds(50, 50, size.width + 10, size.height);
+
         size = l2.getPreferredSize();
-        l2.setBounds(50 + insets.left, 100 + insets.top, size.width, size.height);
+        l2.setBounds(50, 100, size.width, size.height);
+
         size = textField.getPreferredSize();
-        textField.setBounds(250 + insets.left, 100 + insets.top, size.width, size.height);
+        textField.setBounds(250, 100, size.width, size.height);
+
         size = l3.getPreferredSize();
-        l3.setBounds(50 + insets.left, 130 + insets.top, size.width, size.height);
+        l3.setBounds(50, 130, size.width + 30, size.height);
+
         size = difficultyList.getPreferredSize();
-        difficultyList.setBounds(250 + insets.left, 130 + insets.top, size.width, size.height);
+        difficultyList.setBounds(250, 130, size.width, size.height);
 
-        JPanel p2 = new JPanel();
-        p2.setBounds(0, 150, width, 50);
-        p2.setBackground(Color.YELLOW);
-        p2.setLayout(new GridLayout(1, 3));
-//        size = b1.getPreferredSize();
-//        b1.setBounds(50 + insets.left, 150 + insets.top, size.width, size.height);
-//        size = b2.getPreferredSize();
-//        b2.setBounds(200 + insets.left, 150 + insets.top, size.width, size.height);
-//        size = b3.getPreferredSize();
-//        b3.setBounds(450 + insets.left, 150 + insets.top, size.width, size.height);
-
-        p.add(l1);
-        p.add(l2);
-        p.add(l3);
-        p.add(textField);
-        p.add(difficultyList);
-        p2.add(b1);
-        p2.add(b2);
-        p2.add(b3);
-
-
-
-        p.setEnabled(true);
-        p2.setEnabled(true);
-        JPanel p3 = new JPanel();
-        p3.setLayout(new GridLayout(8, 1));
-        p3.add(p2);
-        startFrame.add(p);
-        startFrame.add(p3);
-        startFrame.setLayout(new GridLayout(2, 1));
-        startFrame.revalidate();
-        startFrame.repaint();
+        panel.add(l1);
+        panel.add(l2);
+        panel.add(l3);
+        panel.add(textField);
+        panel.add(difficultyList);
     }
 
 
+    //EFFECTS: constructs the history screen
+    private void loadHistoryScreen() {
+        historyFrame = new JFrame("History");
+        historyFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
+        historyFrame.setLayout(new GridLayout(2, 1));
+        historyFrame.setVisible(true);
+        JTable table = historyTable();
+        JScrollPane scrollPane = new JScrollPane(table);
+        Dimension size = scrollPane.getPreferredSize();
+        scrollPane.setBounds(CENTER_X - size.width / 2, (CENTER_Y - size.height) / 2, size.width, size.height);
+
+
+
+        JPanel p1 = new JPanel();
+        p1.setLayout(null);
+        p1.add(scrollPane);
+        JPanel p2 = new JPanel();
+        p2.setLayout(new GridLayout(6, 1));
+        p1.setEnabled(true);
+        p2.setEnabled(true);
+        JPanel p3 = historyButtonPanel();
+        p2.add(p3);
+
+        historyFrame.add(p1);
+        historyFrame.add(p2);
+        historyFrame.revalidate();
+        historyFrame.repaint();
+
+    }
+
+
+    //EFFECTS: turns history to JTable object for history screen and returns JTable
+    private JTable historyTable() {
+        Object[] column = {"Date", "WPM", "CPM", "Accuracy", "Time Played", "Difficulty"};
+        Object[][] dataList = new Object[history.size()][6];
+        for (int i = 0; i < history.size(); i++) {
+            Stats stat = history.getStats(i);
+            dataList[i][0] = stat.getDateOfGame();
+            dataList[i][1] = stat.getWPM();
+            dataList[i][2] = stat.getCPM();
+            dataList[i][3] = stat.getAccuracy();
+            dataList[i][4] = stat.getTime();
+            dataList[i][5] = stat.getDifficulty();
+
+        }
+
+
+        DefaultTableModel tableModel = new DefaultTableModel(dataList, column);
+        JTable table = new JTable(tableModel);
+        TableColumn column1 = table.getColumnModel().getColumn(0);
+        column1.setPreferredWidth(column1.getPreferredWidth() + 60);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                selectedRowHistory = table.getSelectedRow();
+                System.out.println(table.getSelectedRow());
+            }
+        });
+        return table;
+    }
+
+
+    //EFFECTS: returns JPanel containing the buttons for history screen
+    private JPanel historyButtonPanel() {
+        JPanel p3 = new JPanel();
+        p3.setLayout(new GridLayout(1, 2));
+        p3.setEnabled(true);
+        JButton b1 = new JButton(new ImageIcon(getScaledImage(DEL_BUTTON, width / 6, height / 12)));
+        b1.setActionCommand("Delete");
+        b1.addActionListener(this);
+        JButton b2 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, width / 6, height / 12)));
+        b2.setActionCommand("Cancel");
+        b2.addActionListener(this);
+
+        p3.add(b2);
+        p3.add(b1);
+        return p3;
+    }
+
+
+    //EFFECTS: constructs end screen after game ends
+    private void loadEndScreen() {
+        endFrame = new JFrame("Typing Speed Test Beta");
+        endFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        endFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
+        endFrame.setVisible(true);
+        endFrame.setLayout(new GridLayout(2, 1));
+        int wpm = (int) ((double) game.calcWordsTyped() / game.getTime());
+        int cpm = (int) ((double) game.calcCharsTyped() / game.getTime());
+        result = new Stats(wpm, cpm, game.calcAccuracy(), game.getTime(), difficulty);
+        panel.removeAll();
+        panel.setEnabled(true);
+        loadEndScreenComponents(result);
+
+        JPanel p3 = endButtonPanel();
+        endFrame.add(panel);
+        endFrame.add(p3);
+        endFrame.revalidate();
+        endFrame.repaint();
+
+    }
+
+
+    //EFFECTS: adds labels to panel for end screen
+    private void loadEndScreenComponents(Stats result) {
+        JLabel l1 = new JLabel("Game Over!");
+        JLabel l2 = new JLabel("You typed " + game.calcWordsTyped() + " words!");
+        JLabel l3 = new JLabel("You typed " + game.calcCharsTyped() + " characters!");
+        JLabel l4 = new JLabel("Your final WPM is " + result.getWPM() + "!");
+        JLabel l5 = new JLabel("Your final CPM is " + result.getCPM() + "!");
+        JLabel l6 = new JLabel("Your accuracy is " + result.getAccuracy() + "%!");
+        l1.setBounds(50, 50, l1.getPreferredSize().width + 20, l1.getPreferredSize().height);
+        l2.setBounds(50, 100, l2.getPreferredSize().width, l2.getPreferredSize().height);
+        l3.setBounds(50, 150, l3.getPreferredSize().width, l3.getPreferredSize().height);
+        l4.setBounds(50, 200, l4.getPreferredSize().width, l4.getPreferredSize().height);
+        l5.setBounds(50, 250, l5.getPreferredSize().width + 20, l5.getPreferredSize().height);
+        l6.setBounds(50, 300, l6.getPreferredSize().width, l6.getPreferredSize().height);
+        panel.add(l1);
+        panel.add(l2);
+        panel.add(l3);
+        panel.add(l4);
+        panel.add(l5);
+        panel.add(l6);
+    }
+
+
+    //EFFECTS: returns JPanel containing buttons for end screen
+    private JPanel endButtonPanel() {
+        JPanel p3 = new JPanel();
+        p3.setLayout(new GridLayout(6,1));
+        JPanel p2 = new JPanel();
+        p2.setLayout(new GridLayout(1,2));
+        p2.setEnabled(true);
+        p3.setEnabled(true);
+        JButton b1 = new JButton(new ImageIcon(getScaledImage(CONT_BUTTON, width / 3, height / 12)));
+        b1.setActionCommand("Continue");
+        b1.addActionListener(this);
+        JButton b2 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, width / 6, height / 12)));
+        b2.setActionCommand("Exit");
+        b2.addActionListener(this);
+        p2.add(b1);
+        p2.add(b2);
+        p3.add(p2);
+        return p3;
+    }
+
+
+    //EFFECTS: loads the "Save Data?" screen
+    private void loadEndSaveScreen() {
+        endSaveFrame = new JFrame("End Save Screen");
+        endSaveFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        endSaveFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
+        endSaveFrame.setVisible(true);
+        panel = new JPanel();
+        panel.setLayout(null);
+        loadSaveScreenComponents("Save Data?");
+        endSaveFrame.setLayout(new GridLayout(1, 1));
+        endSaveFrame.add(panel);
+        endSaveFrame.revalidate();
+        endSaveFrame.repaint();
+
+    }
+
+
+    //EFFECTS: adds the yes no button for the two save screens, including the label s
+    private void loadSaveScreenComponents(String s) {
+        JLabel label1 = new JLabel(s);
+        JButton yes = new JButton(new ImageIcon(getScaledImage(YES_BUTTON, 100, 100)));
+        JButton no = new JButton(new ImageIcon(getScaledImage(NO_BUTTON, 100, 100)));
+        yes.setMnemonic(KeyEvent.VK_Y);
+        yes.setActionCommand("Yes");
+        yes.addActionListener(this);
+        no.setMnemonic(KeyEvent.VK_N);
+        no.setActionCommand("No");
+        no.addActionListener(this);
+        Dimension size = label1.getPreferredSize();
+        label1.setBounds(CENTER_X - (size.width + 10) / 2, CENTER_Y - 50, size.width + 10, size.height);
+        size = yes.getPreferredSize();
+        yes.setBounds(CENTER_X - (100) / 2, CENTER_Y, 100, 100);
+        size = no.getPreferredSize();
+        no.setBounds(CENTER_X - (100) / 2, CENTER_Y + 150, 100, 100);
+        panel.add(label1);
+        panel.add(yes);
+        panel.add(no);
+        panel.setEnabled(true);
+    }
+
+
+    //EFFECTS: runs when action is detected, consists of multiple states that corresponds to the currentState, so
+    // the correct button function is ran
     @Override
     public void actionPerformed(ActionEvent e) {
         if (currentState == 0) {
@@ -215,18 +423,20 @@ public class TerminalSwing implements ActionListener, KeyListener {
             actionState1(e);
         }
         if (currentState == 2) {
-            //actionState2(e);
+            //no buttons here
         }
         if (currentState == 3) {
-            //actionState3(e);
+            actionState3(e);
         }
         if (currentState == 4) {
-            //actionState4(e);
+            actionState4(e);
         }
 
 
     }
 
+
+    //EFFECTS: responds to action done in "Load Save Data?" screen
     private void actionState0(ActionEvent e) {
         if ("Yes".equals(e.getActionCommand())) {
             try {
@@ -243,6 +453,8 @@ public class TerminalSwing implements ActionListener, KeyListener {
         }
     }
 
+
+    //EFFECTS: responds to action done in main start screen and history screen
     private void actionState1(ActionEvent e) {
         if ("Enter".equals(e.getActionCommand())) {
             if (textField.getText() != "") {
@@ -253,7 +465,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
         }
 
         if ("History".equals(e.getActionCommand())) {
-            //historyScreen()
+            loadHistoryScreen();
             return;
         }
 
@@ -269,20 +481,71 @@ public class TerminalSwing implements ActionListener, KeyListener {
             difficulty = "Hard";
         }
 
+        actionStateHistory(e);
+
         return;
     }
 
-    private void createEndP() {
+
+    //EFFECTS: responds to action done in history screen
+    private void actionStateHistory(ActionEvent e) {
+        if ("Delete".equals(e.getActionCommand())) {
+            if (selectedRowHistory != -1) {
+                history.removeStats(selectedRowHistory);
+                saveHistory();
+                selectedRowHistory = -1;
+                historyFrame.setVisible(false);
+                loadHistoryScreen();
+            }
+        }
+
+        if ("Cancel".equals(e.getActionCommand())) {
+            historyFrame.setVisible(false);
+        }
 
     }
 
-    //EFFECTS: starts the game with given time
-    private void createInstance(double minutes) throws InterruptedException, IOException {
 
-        p.removeAll();
+    //EFFECTS: responds to action done in end screen
+    private void actionState3(ActionEvent e) {
+        if ("Continue".equals(e.getActionCommand())) {
+            continueGame = true;
+            currentState = 4;
+        }
+
+        if ("Exit".equals(e.getActionCommand())) {
+            continueGame = false;
+            currentState = 4;
+        }
+
+    }
+
+
+    //EFFECTS: responds to action done in end "Save Data?" screen
+    private void actionState4(ActionEvent e) {
+        if ("Yes".equals(e.getActionCommand())) {
+            history.addStats(result);
+            saveHistory();
+            System.out.println("History Saved!");
+            currentState = 5;
+        }
+        if ("No".equals(e.getActionCommand())) {
+            saveHistory();
+            currentState = 5;
+        }
+    }
+
+
+    //EFFECTS: starts the game with given time, constructs the game screen and updates every tick
+    private void createInstance(double minutes) throws InterruptedException, IOException {
+        gameFrame = new JFrame("Typing Speed Test Beta");
+        gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        gameFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
+        gameFrame.setVisible(true);
+        panel.removeAll();
         gameFrame.setLayout(null);
-        p.setBounds(0,0,FRAME_LENGTH,FRAME_HEIGHT);
-        gameFrame.add(p);
+        panel.setBounds(0,0,FRAME_LENGTH,FRAME_HEIGHT);
+        gameFrame.add(panel);
         gameFrame.addKeyListener(this);
 
         game = new Game(minutes, difficulty);
@@ -300,16 +563,9 @@ public class TerminalSwing implements ActionListener, KeyListener {
     }
 
 
-    //EFFECTS: ticks the game
-    private void tick(long timeLeft) throws IOException {
-        updateScreen(timeLeft);
-
-    }
-
-
     //EFFECTS: updates the current screen during game
-    private void updateScreen(long timeLeft) throws IOException {
-        p.removeAll();
+    private void tick(long timeLeft) throws IOException {
+        panel.removeAll();
         int currentPosition = game.getCurrentPosition();
         String generatedWords = game.getRandomWords();
         List<Boolean> correctness = game.getCorrectness();
@@ -318,8 +574,6 @@ public class TerminalSwing implements ActionListener, KeyListener {
         addUntyped(currentPosition, generatedWords);
         gameFrame.repaint();
         addTimer(timeLeft);
-        //addPMBar(timeLeft, "WPM", game.calcWordsTyped(), 100, height * 3 / 4);
-        //addPMBar(timeLeft, "CPM", game.calcCharsTyped(), 500, height * 3 / 4 + 5);
 
 
     }
@@ -339,7 +593,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
                     label.setForeground(red);
                 }
                 label.setBounds(i * CHAR_X, CENTER_Y, CHAR_X, CHAR_Y);
-                p.add(label);
+                panel.add(label);
             }
         } else {
             addTypedWithSpace(currentPosition, correctness, generatedWords);
@@ -352,7 +606,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
         JLabel space = new JLabel(" ");
         for (int i = 0; i <= CHAR_TO_HALF - currentPosition; i++) {
             space.setBounds(i * CHAR_X, CENTER_Y, CHAR_X, CHAR_Y);
-            p.add(space);
+            panel.add(space);
         }
         for (int i = 0; i < currentPosition; i++) {
             char c = generatedWords.charAt(i);
@@ -364,7 +618,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
                 label.setForeground(red);
             }
             label.setBounds((i + CHAR_TO_HALF - currentPosition) * CHAR_X, CENTER_Y, CHAR_X, CHAR_Y);
-            p.add(label);
+            panel.add(label);
         }
     }
 
@@ -376,7 +630,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
             JLabel label = new JLabel(c + "");
             label.setForeground(black);
             label.setBounds(CENTER_X + i * CHAR_X, CENTER_Y, CHAR_X, CHAR_Y);
-            p.add(label);
+            panel.add(label);
         }
     }
 
@@ -391,10 +645,11 @@ public class TerminalSwing implements ActionListener, KeyListener {
             JLabel label = new JLabel(c + "");
             label.setForeground(black);
             label.setBounds(posX, posY, 14, 16);
-            p.add(label);
+            panel.add(label);
 
         }
     }
+
 
     //EFFECTS: saves the history to json
     public void saveHistory() {
@@ -407,6 +662,8 @@ public class TerminalSwing implements ActionListener, KeyListener {
         }
     }
 
+
+    //EFFECTS: detects character input during game session, adds the input to game
     @Override
     public void keyTyped(KeyEvent e) {
 
@@ -426,6 +683,8 @@ public class TerminalSwing implements ActionListener, KeyListener {
         return;
     }
 
+
+    //EFFECTS: detects backspace during game session, removes one input in game
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
@@ -434,8 +693,14 @@ public class TerminalSwing implements ActionListener, KeyListener {
         }
     }
 
+
+    //unnecessary function
     @Override
     public void keyReleased(KeyEvent e) {
 
+    }
+
+    public Boolean getContinueGame() {
+        return continueGame;
     }
 }
