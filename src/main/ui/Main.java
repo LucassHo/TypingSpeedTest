@@ -7,11 +7,14 @@ public class Main {
 
     //EFFECTS: constructs new typing speed test instance
     public static void main(String[] args) throws Exception {
-        //TerminalGame gameHandler = new TerminalGame();
 
-        //gameHandler.startScreen();
-        //run(gameHandler);
         TerminalSwing gameHandler = new TerminalSwing();
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                gameHandler.printLog();
+            }
+        }));
         run(gameHandler);
 
     }

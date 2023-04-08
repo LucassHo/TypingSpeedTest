@@ -51,7 +51,7 @@ public class JsonReader {
                     newStat.getInt("Accuracy"),
                     newStat.getDouble("Time"),
                     newStat.getString("Difficulty"));
-            history.addStats(stats);
+            history.initStats(stats);
         }
         return history;
     }

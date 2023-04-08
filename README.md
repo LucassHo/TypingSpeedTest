@@ -39,3 +39,19 @@ start screen, choosing a stat from table by clicking it and pressing delete
 - You can locate my visual components by the data/images directory
 - You can save the state by choosing yes at the save data screen after the results screen
 - You can reload the state by choosing yes at the first screen when running the program
+
+
+***Phase 4: Task 2***: <br />
+
+Date: Sat Apr 08 01:35:19 PDT 2023 <br />
+New Game Stat with length 0.3 mins played at 08/04/2023 01:35:14 added to History. <br />
+Date: Sat Apr 08 01:35:36 PDT 2023 <br />
+New Game Stat with length 0.1 mins played at 08/04/2023 01:35:33 added to History. <br />
+Date: Sat Apr 08 01:35:48 PDT 2023 <br />
+Game Stat with length 0.3 mins played at 08/04/2023 01:35:14 removed from History. <br />
+Date: Sat Apr 08 01:36:26 PDT 2023 <br />
+New Game Stat with length 0.5 mins played at 08/04/2023 01:36:24 added to History. <br />
+Date: Sat Apr 08 01:36:31 PDT 2023 <br />
+Game Stat with length 0.1 mins played at 08/04/2023 01:35:33 removed from History. <br />
+
+Process finished with exit code 0

@@ -1,5 +1,7 @@
 package ui;
 
+import model.Event;
+import model.EventLog;
 import model.Game;
 import model.History;
 import model.Stats;
@@ -19,6 +21,7 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -36,7 +39,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
     private String difficulty = "Easy";
     private Boolean continueGame;
     private static final String HISTORY_STORE = "./data/history.json";
-    private static final Image PLAY_BUTTON = new ImageIcon("./data/images/play_button.jpeg").getImage();
+    private static final Image START_BUTTON = new ImageIcon("./data/images/start_button.png").getImage();
     private static final Image HISTORY_BUTTON = new ImageIcon("./data/images/history_button.png").getImage();
     private static final Image YES_BUTTON = new ImageIcon("./data/images/yes_button.png").getImage();
     private static final Image NO_BUTTON = new ImageIcon("./data/images/no_button.png").getImage();
@@ -55,13 +58,14 @@ public class TerminalSwing implements ActionListener, KeyListener {
     private Color red = Color.RED;
     private Color black = Color.BLACK;
     private int selectedRowHistory = -1;
-    private static final int CHAR_X = 10;
+    private static final int CHAR_X = 15;
     private static final int CHAR_Y = 16;
-    private static final int FRAME_LENGTH = 900;
-    private static final int FRAME_HEIGHT = 900;
+    private static final int FRAME_LENGTH = 600;
+    private static final int FRAME_HEIGHT = 600;
     private static final int CENTER_X = FRAME_LENGTH / 2;
     private static final int CENTER_Y = FRAME_HEIGHT / 2;
     private static final int CHAR_TO_HALF = CENTER_X / CHAR_X;
+    private EventLog eventLog = EventLog.getInstance();
 
 
     //Constructor for TerminalSwing
@@ -139,45 +143,37 @@ public class TerminalSwing implements ActionListener, KeyListener {
         startFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         startFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
         startFrame.setVisible(true);
-        JPanel p2 = buttonPanel();
 
         createPanel();
-
         panel.setEnabled(true);
-
-        JPanel p3 = new JPanel();
-        p3.setLayout(new GridLayout(6, 1));
-        p3.add(p2);
         startFrame.add(panel);
-        startFrame.add(p3);
-        startFrame.setLayout(new GridLayout(2, 1));
+        startFrame.setLayout(new GridLayout(1, 1));
         startFrame.revalidate();
         startFrame.repaint();
     }
 
 
     //EFFECTS: returns panel for buttons in main start screen
-    private JPanel buttonPanel() {
-        JButton b1 = new JButton(new ImageIcon(getScaledImage(PLAY_BUTTON, width / 12, height / 12)));
+    private void buttonPanel() {
+        Dimension d = new Dimension(150, 50);
+        JButton b1 = new JButton(new ImageIcon(getScaledImage(START_BUTTON, d.width, d.height)));
         b1.setActionCommand("Enter");
         b1.addActionListener(this);
-        JButton b2 = new JButton(new ImageIcon(getScaledImage(HISTORY_BUTTON, width / 7, height / 12)));
+        JButton b2 = new JButton(new ImageIcon(getScaledImage(HISTORY_BUTTON, d.width, d.height)));
         b2.setActionCommand("History");
         b2.addActionListener(this);
-        JButton b3 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, width / 6, height / 12)));
+        JButton b3 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, d.width, d.height)));
         b3.setActionCommand("Exit");
         b3.addActionListener(this);
 
+        b1.setBounds(50, FRAME_HEIGHT - 300, d.width, d.height);
+        b2.setBounds(CENTER_X - d.width / 2, FRAME_HEIGHT - 300, d.width, d.height);
+        b3.setBounds(FRAME_LENGTH - 50 - d.width, FRAME_HEIGHT - 300, d.width, d.height);
 
-        JPanel p2 = new JPanel();
-        p2.setBounds(0, 150, width, 50);
-        p2.setLayout(new GridLayout(1, 3));
 
-        p2.add(b1);
-        p2.add(b2);
-        p2.add(b3);
-        p2.setEnabled(true);
-        return p2;
+        panel.add(b1);
+        panel.add(b2);
+        panel.add(b3);
     }
 
 
@@ -187,6 +183,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
         panel.setBounds(0, 0, width, height);
         panel.setLayout(null);
         labelPanel();
+        buttonPanel();
     }
 
 
@@ -228,27 +225,22 @@ public class TerminalSwing implements ActionListener, KeyListener {
     private void loadHistoryScreen() {
         historyFrame = new JFrame("History");
         historyFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
-        historyFrame.setLayout(new GridLayout(2, 1));
+        historyFrame.setLayout(new GridLayout(1, 1));
         historyFrame.setVisible(true);
         JTable table = historyTable();
         JScrollPane scrollPane = new JScrollPane(table);
         Dimension size = scrollPane.getPreferredSize();
-        scrollPane.setBounds(CENTER_X - size.width / 2, (CENTER_Y - size.height) / 2, size.width, size.height);
+        scrollPane.setBounds(CENTER_X - size.width / 2, 50, size.width, size.height);
 
 
 
         JPanel p1 = new JPanel();
         p1.setLayout(null);
         p1.add(scrollPane);
-        JPanel p2 = new JPanel();
-        p2.setLayout(new GridLayout(6, 1));
         p1.setEnabled(true);
-        p2.setEnabled(true);
-        JPanel p3 = historyButtonPanel();
-        p2.add(p3);
+        addHistoryButtonTo(p1);
 
         historyFrame.add(p1);
-        historyFrame.add(p2);
         historyFrame.revalidate();
         historyFrame.repaint();
 
@@ -279,7 +271,6 @@ public class TerminalSwing implements ActionListener, KeyListener {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 selectedRowHistory = table.getSelectedRow();
-                System.out.println(table.getSelectedRow());
             }
         });
         return table;
@@ -287,20 +278,21 @@ public class TerminalSwing implements ActionListener, KeyListener {
 
 
     //EFFECTS: returns JPanel containing the buttons for history screen
-    private JPanel historyButtonPanel() {
-        JPanel p3 = new JPanel();
-        p3.setLayout(new GridLayout(1, 2));
-        p3.setEnabled(true);
-        JButton b1 = new JButton(new ImageIcon(getScaledImage(DEL_BUTTON, width / 6, height / 12)));
+    private void addHistoryButtonTo(JPanel p1) {
+        Dimension d1 = new Dimension(50, 50);
+        JButton b1 = new JButton(new ImageIcon(getScaledImage(DEL_BUTTON, d1.width, d1.height)));
         b1.setActionCommand("Delete");
         b1.addActionListener(this);
-        JButton b2 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, width / 6, height / 12)));
+        Dimension d2 = new Dimension(150, 50);
+        JButton b2 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, d2.width, d2.height)));
         b2.setActionCommand("Cancel");
         b2.addActionListener(this);
 
-        p3.add(b2);
-        p3.add(b1);
-        return p3;
+        b1.setBounds(FRAME_LENGTH - 50 - d1.width, FRAME_HEIGHT - 100, d1.width, d1.height);
+        b2.setBounds(FRAME_LENGTH - 100 - d1.width - d2.width, FRAME_HEIGHT - 100, d2.width, d2.height);
+
+        p1.add(b1);
+        p1.add(b2);
     }
 
 
@@ -310,7 +302,7 @@ public class TerminalSwing implements ActionListener, KeyListener {
         endFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         endFrame.setSize(FRAME_LENGTH, FRAME_LENGTH);
         endFrame.setVisible(true);
-        endFrame.setLayout(new GridLayout(2, 1));
+        endFrame.setLayout(new GridLayout(1, 1));
         int wpm = (int) ((double) game.calcWordsTyped() / game.getTime());
         int cpm = (int) ((double) game.calcCharsTyped() / game.getTime());
         result = new Stats(wpm, cpm, game.calcAccuracy(), game.getTime(), difficulty);
@@ -318,9 +310,8 @@ public class TerminalSwing implements ActionListener, KeyListener {
         panel.setEnabled(true);
         loadEndScreenComponents(result);
 
-        JPanel p3 = endButtonPanel();
+        addEndButton();
         endFrame.add(panel);
-        endFrame.add(p3);
         endFrame.revalidate();
         endFrame.repaint();
 
@@ -336,11 +327,11 @@ public class TerminalSwing implements ActionListener, KeyListener {
         JLabel l5 = new JLabel("Your final CPM is " + result.getCPM() + "!");
         JLabel l6 = new JLabel("Your accuracy is " + result.getAccuracy() + "%!");
         l1.setBounds(50, 50, l1.getPreferredSize().width + 20, l1.getPreferredSize().height);
-        l2.setBounds(50, 100, l2.getPreferredSize().width, l2.getPreferredSize().height);
-        l3.setBounds(50, 150, l3.getPreferredSize().width, l3.getPreferredSize().height);
-        l4.setBounds(50, 200, l4.getPreferredSize().width, l4.getPreferredSize().height);
+        l2.setBounds(50, 100, l2.getPreferredSize().width + 20, l2.getPreferredSize().height);
+        l3.setBounds(50, 150, l3.getPreferredSize().width + 20, l3.getPreferredSize().height);
+        l4.setBounds(50, 200, l4.getPreferredSize().width + 20, l4.getPreferredSize().height);
         l5.setBounds(50, 250, l5.getPreferredSize().width + 20, l5.getPreferredSize().height);
-        l6.setBounds(50, 300, l6.getPreferredSize().width, l6.getPreferredSize().height);
+        l6.setBounds(50, 300, l6.getPreferredSize().width + 20, l6.getPreferredSize().height);
         panel.add(l1);
         panel.add(l2);
         panel.add(l3);
@@ -351,23 +342,20 @@ public class TerminalSwing implements ActionListener, KeyListener {
 
 
     //EFFECTS: returns JPanel containing buttons for end screen
-    private JPanel endButtonPanel() {
-        JPanel p3 = new JPanel();
-        p3.setLayout(new GridLayout(6,1));
-        JPanel p2 = new JPanel();
-        p2.setLayout(new GridLayout(1,2));
-        p2.setEnabled(true);
-        p3.setEnabled(true);
-        JButton b1 = new JButton(new ImageIcon(getScaledImage(CONT_BUTTON, width / 3, height / 12)));
+    private void addEndButton() {
+        Dimension d1 = new Dimension(200, 50);
+        JButton b1 = new JButton(new ImageIcon(getScaledImage(CONT_BUTTON, d1.width, d1.height)));
         b1.setActionCommand("Continue");
         b1.addActionListener(this);
-        JButton b2 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, width / 6, height / 12)));
+        Dimension d2 = new Dimension(150, 50);
+        JButton b2 = new JButton(new ImageIcon(getScaledImage(EXIT_BUTTON, d2.width, d2.height)));
         b2.setActionCommand("Exit");
-        b2.addActionListener(this);
-        p2.add(b1);
-        p2.add(b2);
-        p3.add(p2);
-        return p3;
+
+        b1.setBounds(50, FRAME_HEIGHT - 100, d1.width, d1.height);
+        b2.setBounds(50 + d1.width + 50, FRAME_HEIGHT - 100, d2.width, d2.height);
+
+        panel.add(b1);
+        panel.add(b2);
     }
 
 
@@ -390,9 +378,11 @@ public class TerminalSwing implements ActionListener, KeyListener {
 
     //EFFECTS: adds the yes no button for the two save screens, including the label s
     private void loadSaveScreenComponents(String s) {
+        int buttonWidth = 75;
+        int buttonHeight = 75;
         JLabel label1 = new JLabel(s);
-        JButton yes = new JButton(new ImageIcon(getScaledImage(YES_BUTTON, 100, 100)));
-        JButton no = new JButton(new ImageIcon(getScaledImage(NO_BUTTON, 100, 100)));
+        JButton yes = new JButton(new ImageIcon(getScaledImage(YES_BUTTON, buttonWidth, buttonHeight)));
+        JButton no = new JButton(new ImageIcon(getScaledImage(NO_BUTTON, buttonWidth, buttonHeight)));
         yes.setMnemonic(KeyEvent.VK_Y);
         yes.setActionCommand("Yes");
         yes.addActionListener(this);
@@ -401,10 +391,8 @@ public class TerminalSwing implements ActionListener, KeyListener {
         no.addActionListener(this);
         Dimension size = label1.getPreferredSize();
         label1.setBounds(CENTER_X - (size.width + 10) / 2, CENTER_Y - 50, size.width + 10, size.height);
-        size = yes.getPreferredSize();
-        yes.setBounds(CENTER_X - (100) / 2, CENTER_Y, 100, 100);
-        size = no.getPreferredSize();
-        no.setBounds(CENTER_X - (100) / 2, CENTER_Y + 150, 100, 100);
+        yes.setBounds(CENTER_X - buttonWidth / 2, CENTER_Y, buttonWidth, buttonHeight);
+        no.setBounds(CENTER_X - buttonWidth / 2, CENTER_Y + 100, buttonWidth, buttonHeight);
         panel.add(label1);
         panel.add(yes);
         panel.add(no);
@@ -526,7 +514,6 @@ public class TerminalSwing implements ActionListener, KeyListener {
         if ("Yes".equals(e.getActionCommand())) {
             history.addStats(result);
             saveHistory();
-            System.out.println("History Saved!");
             currentState = 5;
         }
         if ("No".equals(e.getActionCommand())) {
@@ -702,5 +689,16 @@ public class TerminalSwing implements ActionListener, KeyListener {
 
     public Boolean getContinueGame() {
         return continueGame;
+    }
+
+
+    //EFFECTS: prints eventLog to console
+    public void printLog() {
+        Iterator<Event> eventIterator = eventLog.iterator();
+        while (eventIterator.hasNext()) {
+            Event e = eventIterator.next();
+            System.out.println("Date: " + e.getDate());
+            System.out.println(e.getDescription());
+        }
     }
 }
