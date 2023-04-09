@@ -54,4 +54,9 @@ New Game Stat with length 0.5 mins played at 08/04/2023 01:36:24 added to Histor
 Date: Sat Apr 08 01:36:31 PDT 2023 <br />
 Game Stat with length 0.1 mins played at 08/04/2023 01:35:33 removed from History. <br />
 
-Process finished with exit code 0
+***Phase 4: Task 3***: <br />
+If I had more time on the project, I would refactor the use of JFrame in UI. <br />
+
+Currently,  my UI design creates a new JFrame for every change of state, 
+which will accumulate many unused JFrame objects as the program continues to be played.
+ By using a single frame across all states, I can greatly reduce the memory usage of the game.
